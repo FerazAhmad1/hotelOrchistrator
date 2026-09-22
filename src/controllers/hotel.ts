@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
-import supplierBService from "../suppliers/supplier-b.service";
+import { getTemporalClient } from "../temporal/client";
+
 export const getHotels = async (req: Request, res: Response) => {
   try {
     const city = String(req.query.city || "").trim();
@@ -10,18 +11,25 @@ export const getHotels = async (req: Request, res: Response) => {
         message: "city is required",
       });
     }
-    const response = await supplierBService.getHotels(city);
-    res.status(200).json({
-      success: true,
-      data: response,
-      message: "",
+
+    const client = await getTemporalClient();
+
+    const result = await client.workflow.execute("hotelWorkflow", {
+      taskQueue: "hotel-task-queue",
+      workflowId: `hotel-${city}`,
+      args: [city],
     });
-  } catch (error) {
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Something went wrong";
 
-    res.status(500).json({
-      sucess: false,
+    return res.status(500).json({
+      success: false,
       message,
     });
   }
