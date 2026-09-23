@@ -21,7 +21,7 @@ export const getHotels = async (req: Request, res: Response) => {
       error instanceof Error ? error.message : "Something went wrong";
 
     res.status(500).json({
-      sucess: false,
+      success: false,
       message,
     });
   }

@@ -23,18 +23,14 @@ services:
       start_period: 10s
 
   app:
-    image: node:24.16.0-bookworm-slim
-    working_dir: /usr/src/app
+    build: .
     ports:
       - "8000:8000"
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     environment:
       - PORT=8000
       - REDIS_URL=redis://redis:6379
       - TEMPORAL_ADDRESS=temporal:7233
-    command: sh -c "npm install && npm run dev"
+    command: npm start
     depends_on:
       temporal:
         condition: service_healthy
@@ -43,16 +39,12 @@ services:
     restart: on-failure
 
   worker:
-    image: node:24.16.0-bookworm-slim
-    working_dir: /usr/src/app
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+    build: .
     environment:
       - PORT=8000
       - REDIS_URL=redis://redis:6379
       - TEMPORAL_ADDRESS=temporal:7233
-    command: sh -c "npm install && npm run worker"
+    command: npm run worker
     depends_on:
       temporal:
         condition: service_healthy

@@ -4,4 +4,5 @@ export interface Hotel {
   price: number;
   city: string;
   commissionPct: number;
+  supplier: "Supplier A" | "Supplier B";
 }

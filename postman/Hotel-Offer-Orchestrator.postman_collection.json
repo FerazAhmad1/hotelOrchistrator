@@ -1,0 +1,164 @@
+{
+  "info": {
+    "name": "Hotel Offer Orchestrator",
+    "description": "API tests for the Hotel Offer Orchestrator: Temporal-orchestrated hotel aggregation/dedupe, Redis-side price filtering, and the two mock supplier endpoints. Run with the Docker stack up (docker compose up --build).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Hotel Aggregation API",
+      "item": [
+        {
+          "name": "Get hotels - valid city with overlaps (delhi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Valid city where both mock suppliers return overlapping hotel names (Holtin, Radison). Expects a deduplicated list where the cheaper price wins for each overlapping name, plus the two single-supplier hotels (Leela, Taj)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get hotels - price range filter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=5000&maxPrice=6000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" },
+                { "key": "minPrice", "value": "5000" },
+                { "key": "maxPrice", "value": "6000" }
+              ]
+            },
+            "description": "Same city, filtered by price range. Filtering is performed server-side inside Redis via ZRANGE ... BYSCORE on the deduplicated list's price index. Expects only hotels priced between 5000 and 6000 inclusive."
+          },
+          "response": []
+        },
+        {
+          "name": "Get hotels - city with no results (mumbai)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=mumbai",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                { "key": "city", "value": "mumbai" }
+              ]
+            },
+            "description": "The mock suppliers only have data for 'delhi'. Any other city, such as 'mumbai', returns success with an empty data array."
+          },
+          "response": []
+        },
+        {
+          "name": "Get hotels - missing city (validation)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"]
+            },
+            "description": "city is a required query parameter. Expects a 400 response: { \"success\": false, \"message\": \"city is required\" }."
+          },
+          "response": []
+        },
+        {
+          "name": "Get hotels - invalid minPrice (validation)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=abc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" },
+                { "key": "minPrice", "value": "abc" }
+              ]
+            },
+            "description": "minPrice is not a valid number. Expects a 400 response: { \"success\": false, \"message\": \"minPrice and maxPrice must be valid numbers\" }."
+          },
+          "response": []
+        },
+        {
+          "name": "Get hotels - minPrice greater than maxPrice (validation)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hotels?city=delhi&minPrice=7000&maxPrice=5000",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" },
+                { "key": "minPrice", "value": "7000" },
+                { "key": "maxPrice", "value": "5000" }
+              ]
+            },
+            "description": "minPrice (7000) is greater than maxPrice (5000). Expects a 400 response: { \"success\": false, \"message\": \"minPrice cannot be greater than maxPrice\" }."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mock Supplier APIs",
+      "item": [
+        {
+          "name": "Supplier A - raw hotels (delhi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierA/hotels?city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["supplierA", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Raw, un-deduplicated mock data directly from Supplier A, before Temporal orchestration and aggregation. Useful for confirming the raw inputs to the dedupe logic."
+          },
+          "response": []
+        },
+        {
+          "name": "Supplier B - raw hotels (delhi)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/supplierB/hotels?city=delhi",
+              "host": ["{{baseUrl}}"],
+              "path": ["supplierB", "hotels"],
+              "query": [
+                { "key": "city", "value": "delhi" }
+              ]
+            },
+            "description": "Raw, un-deduplicated mock data directly from Supplier B, before Temporal orchestration and aggregation. Useful for confirming the raw inputs to the dedupe logic."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
