@@ -7,4 +7,5 @@ dotenv.config({
 export const config = {
   port: Number(process.env.PORT) || 8000,
   redisUrl: process.env.REDIS_URL!,
+  temporalAddress: process.env.TEMPORAL_ADDRESS || "localhost:7233",
 };
